@@ -3,6 +3,7 @@ from requests import get
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from db_setup import Category, Company, Base
+import pandas as pd
 
 
 def get_html(url):
@@ -86,10 +87,31 @@ def push_companies_to_db(session, df):
         session.commit()
 
 
+def query_all_categories(session):
+    query = session.query(Category).all()
+    df = list()
+    for category in query:
+        df.append(category.serialize)
+    return pd.DataFrame.from_records(df)
+
+
+def query_all_companies(session):
+    query = session.query(Company).all()
+    df = list()
+    for category in query:
+        df.append(category.serialize)
+    return pd.DataFrame.from_records(df)
+
+
 def main():
     # get html file
     url = 'https://www.tadawul.com.sa/wps/portal/tadawul/markets/equities/market-watch/market-watch-today?locale=en'
     html = get_html(url)
+
+    # exit if file fails to download
+    if html is None:
+        exit(1)
+
     soup = BeautifulSoup(html, "html.parser")
 
     # scrape data
@@ -112,6 +134,16 @@ def main():
     # push scrape data to db
     push_category_to_db(session, categories)
     push_companies_to_db(session, df)
+    print("all the categories and companies have been added to the database")
+
+    # query db
+    df_category = query_all_categories(session)
+    df_companies = query_all_companies(session)
+
+    # write csv
+    df_category.to_csv('category_table.csv')
+    df_companies.to_csv('company_table.csv')
+    print("csv written")
 
 
 if __name__ == '__main__':
