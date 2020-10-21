@@ -140,6 +140,10 @@ def main():
     df_category = query_all_categories(session)
     df_companies = query_all_companies(session)
 
+    # show tables
+    print(df_category)
+    print(df_companies.head(10))
+
     # write csv
     df_category.to_csv('category_table.csv')
     df_companies.to_csv('company_table.csv')
